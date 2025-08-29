@@ -9,7 +9,7 @@ This guide provides step-by-step instructions to set up and test PBR-NeRF in the
 - At least 16GB of GPU memory recommended
 
 ## Container Setup
-
+<!-- 
 You can build your own Docker image for PBR-NeRF using the provided Dockerfile.
 
 ```bash
@@ -23,7 +23,7 @@ source /workspace/setup_env.sh
 
 ```
 
-OR create it interactively:
+OR create it interactively: -->
 
 Start the container with GPU access:
 
