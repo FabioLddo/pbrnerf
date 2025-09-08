@@ -94,12 +94,13 @@ apt-get install -y \
     libgomp1 \
     libglu1-mesa-dev \
     freeglut3-dev \
-    mesa-common-dev
+    mesa-common-dev \
+    xorg-dev libglu1-mesa-dev 
 
 # Create symlinks for python
 ln -sf /usr/bin/python3 /usr/bin/python
 
-apt install gcc-10 g++-10
+apt install -y gcc-10 g++-10
 update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 100
 update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 100
 
@@ -223,6 +224,7 @@ cd build
 export CC=/usr/bin/gcc-10
 export CXX=/usr/bin/g++-10
 export CXXFLAGS="-std=c++17"
+# export USE_CUDNN=1
 
 # Configure with C++17
 cmake .. \
@@ -330,13 +332,64 @@ python -c "import pyrt; print('PyRT module loaded successfully')"
 
 Check your GPU's compute capability at: https://developer.nvidia.com/cuda-gpus
 
-## Next Steps
+## Solving:
 
-After successful installation:
+Interesting discussion about OptiX:
+https://forums.developer.nvidia.com/t/libnvoptix-so-1-not-installed-by-the-driver/221704/7
 
-1. Download the full datasets as described in the main README
-2. Run the provided training scripts
-3. Monitor progress with Weights & Biases
-4. Evaluate results using the provided evaluation scripts
 
-For detailed usage instructions, refer to the main README.md file.
+Test docker commands:
+
+```bash
+
+docker run --gpus all --rm -it --entrypoint /bin/bash ghcr.io/fabiolddo/pbrnerf:latest
+
+docker run --gpus all --rm -it --entrypoint /bin/bash -v ./datasets:/workspace/datasets/ -v /usr/lib/x86_64-linux-gnu/libnvoptix.so.1:/usr/lib/x86_64-linux-gnu/libnvoptix.so.1:ro -v /usr/lib/x86_64-linux-gnu/libnvidia-rtcore.so.535.261.03:/usr/lib/x86_64-linux-gnu/libnvidia-rtcore.so.535.261.03:ro ghcr.io/fabiolddo/pbrnerf:latest
+
+
+docker run --gpus all --rm -it --entrypoint /bin/bash -v ./datasets:/workspace/datasets/ -v /usr/lib/x86_64-linux-gnu/libnvoptix.so.1:/usr/lib/x86_64-linux-gnu/libnvoptix.so.1:ro -v /usr/lib/x86_64-linux-gnu/libnvidia-rtcore.so.535.261.03:/usr/lib/x86_64-linux-gnu/libnvidia-rtcore.so.535.261.03:ro -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:rw ghcr.io/fabiolddo/pbrnerf:latest
+
+```
+
+Building optix sample??
+
+```bash
+
+cd $OPTIX_ROOT
+mkdir build && cd build
+cmake ..
+make -j$(nproc)
+
+./optixHello
+
+```
+
+Test:
+
+```bash
+
+# clean and reconfigure the OptiX SDK samples
+cd /workspace/NVIDIA-OptiX-SDK-7.6.0-linux64-x86_64/SDK
+rm -rf build && mkdir build && cd build
+
+cmake .. \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_CUDA_STANDARD=17 \
+  -DCMAKE_CUDA_STANDARD_REQUIRED=ON \
+  -DCMAKE_CXX_STANDARD=17 \
+  -DCMAKE_CXX_STANDARD_REQUIRED=ON \
+  -DCMAKE_CUDA_HOST_COMPILER=/usr/bin/g++-9 \
+  -DCMAKE_CUDA_ARCHITECTURES=89
+
+# build the samples you need (or 'make -j$(nproc)')
+make -j"$(nproc)" optixHello optixPathTracer
+
+./optixHello
+./optixPathTracer
+
+# or 
+
+make -k
+
+```
+
