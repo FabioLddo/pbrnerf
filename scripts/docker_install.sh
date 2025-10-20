@@ -33,7 +33,9 @@ TORCHVISION_VERSION="0.19.0"
 TORCHAUDIO_VERSION="2.4.0"
 # CUDA_ARCHITECTURES="90;89;86;80;75;70;61"
 # TCNN_CUDA_ARCHITECTURES="${TCNN_CUDA_ARCHITECTURES:-89;86;80;75;70}"  # Default to RTX 4090, can be overridden
-TCNN_CUDA_ARCHITECTURES=""
+CUDA_ARCHITECTURES="89"
+TCNN_CUDA_ARCHITECTURES="${TCNN_CUDA_ARCHITECTURES:-89}"  # Default to RTX 4090, can be overridden
+# TCNN_CUDA_ARCHITECTURES=""
 WANDB_API_KEY="${WANDB_API_KEY:-}"  # Optional wandb API key
 WORKSPACE_DIR="${WORKSPACE_DIR:-/workspace}"
 
@@ -63,6 +65,7 @@ apt-get install -y -qq \
     libglu1-mesa-dev \
     freeglut3-dev \
     mesa-common-dev \
+    xorg-dev libglu1-mesa-dev \
     gcc-10 \
     g++-10
 
@@ -108,15 +111,15 @@ print_success "Environment variables configured"
 print_status "Step 3/10: Downloading and installing OptiX SDK..."
 cd ${WORKSPACE_DIR}
 
-if [ ! -f "NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64.sh" ]; then
-    print_warning "OptiX SDK installer not found. Please download it manually from:"
-    print_warning "https://developer.nvidia.com/optix/downloads/7.3.0/linux64"
-    print_warning "Save it as: ${WORKSPACE_DIR}/NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64.sh"
+# if [ ! -f "NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64.sh" ]; then
+#     print_warning "OptiX SDK installer not found. Please download it manually from:"
+#     print_warning "https://developer.nvidia.com/optix/downloads/7.3.0/linux64"
+#     print_warning "Save it as: ${WORKSPACE_DIR}/NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64.sh"
     
-    # Try to download (this will likely fail due to authentication requirements)
-    print_status "Attempting to download OptiX SDK (may require manual download)..."
-    wget -q https://developer.nvidia.com/optix/downloads/7.3.0/linux64 -O NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64.sh || true
-fi
+#     # Try to download (this will likely fail due to authentication requirements)
+#     print_status "Attempting to download OptiX SDK (may require manual download)..."
+#     wget -q https://developer.nvidia.com/optix/downloads/7.3.0/linux64 -O NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64.sh || true
+# fi
 
 if [ -f "NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64.sh" ]; then
     chmod +x NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64.sh

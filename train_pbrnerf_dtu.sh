@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Set the default scene
-SCENE="DTU_scan37"
+SCENE="DTU_scan1"
 TAGS="debug"
 CONS_LOSS=0.0
 SPEC_LOSS=0.0
@@ -26,11 +26,29 @@ echo "Using scene: $SCENE"
 
 cd code
 python training/train.py \
-  ~/scratch/datasets/data_dtu/$SCENE \
-  outputs \
+  /workspace/datasets/data_dtu/$SCENE \
+  /workspace/outputs/data_dtu/$SCENE \
   --name pbrnerf_dtu_$SCENE \
   --tags $TAGS \
   --override_cons_weighting $CONS_LOSS \
   --override_spec_weighting $SPEC_LOSS \
   --config_path configs/config_dtu_pbrnerf.json
+
+# Example for NeILF++ "city"
+# python evaluation/evaluate.py \
+#   /workspace/datasets/neilfpp_synthetic/synthetic_city \
+#   /workspace/outputs \
+#   --config_path configs/config_synthetic_data_pbrnerf_neilfpp.json \
+#   --phase joint \
+#   --eval_brdf \
+#   --export_brdf \
+#   --export_nvs \
+#   --export_mesh \
+#   --export_lighting
+
+# python evaluation/evaluate.py \
+#   /workspace/datasets/neilfpp_synthetic/synthetic_city \
+#   /workspace/outputs \
+#   --config_path configs/config_synthetic_data_pbrnerf_neilfpp.json \
+#   --phase joint --export_mesh 
 

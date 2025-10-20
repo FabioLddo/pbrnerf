@@ -26,8 +26,8 @@ echo "Using scene: $SCENE"
 
 cd code
 python training/train.py \
-  ~/scratch/datasets/neilfpp_synthetic/synthetic_$SCENE \
-  outputs \
+  /workspace/datasets/neilfpp_synthetic/synthetic_$SCENE \
+  /workspace/outputs/neilfpp_synthetic/synthetic_$SCENE \
   --name pbrnerf_neilfpp_$SCENE \
   --tags $TAGS \
   --override_cons_weighting $CONS_LOSS \

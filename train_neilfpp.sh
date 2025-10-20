@@ -16,9 +16,8 @@ echo "Using scene: $SCENE"
 
 cd code
 python training/train.py \
-  ~/scratch/datasets/neilfpp_synthetic/synthetic_$SCENE \
-  outputs \
+  /workspace/datasets/neilfpp_synthetic/synthetic_$SCENE \
+  /workspace/outputs \
   --name neilfpp_$SCENE \
   --tags $TAGS \
   --config_path configs/config_synthetic_data_neilfpp.json
-

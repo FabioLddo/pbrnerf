@@ -16,8 +16,8 @@ echo "Using scene: $SCENE"
 
 cd code
 python training/train.py \
-  ~/scratch/datasets/data_dtu/$SCENE \
-  outputs \
+  /workspace/datasets/data_dtu/$SCENE \
+  /workspace/outputs/data_dtu/$SCENE \
   --name neilfpp_dtu_ngp_$SCENE \
   --tags $TAGS \
   --config_path configs/config_dtu_volsdf_ngp.json
