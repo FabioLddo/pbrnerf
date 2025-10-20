@@ -7,6 +7,8 @@ ARG CXX_STANDARD=17
 
 ARG CUDA_VERSION=11.8
 ARG CUDA_ARCHITECTURES="90;89;86;80;75;70;61"
+ARG CUDA_ARCHITECTURES="89"
+
 ARG OPTIX_VERSION=7.6.0
 
 ARG PYTHON_VERSION=3.10
@@ -37,7 +39,10 @@ ENV TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_LIST}
 ENV PIP_DEFAULT_TIMEOUT=${PIP_TIMEOUT}
 ENV PIP_RETRIES=${PIP_RETRIES}
 
-WORKDIR /workspace
+WORKDIR /workspaces/pbrnerf
+
+# Copy source code
+COPY . ./
 
 # Step 1: Update system and install dependencies
 RUN apt-get update -qq && \
@@ -104,7 +109,10 @@ RUN pip install --no-cache-dir  mkl==2023.1.0 && \
 # Step 5: Install tiny-cuda-nn
 RUN TCNN_CUDA_ARCHITECTURES="${CUDA_ARCHITECTURES}" pip install --no-cache-dir ninja git+https://github.com/NVlabs/tiny-cuda-nn/#subdirectory=bindings/torch
 
-# Step 6: Download and install OptiX SDK
+# Alternative: Install tiny-cuda-nn from local files, necessary for Cluster builds
+# RUN TCNN_CUDA_ARCHITECTURES="${CUDA_ARCHITECTURES}" pip install --no-cache-dir -v ninja tiny-cuda-nn/bindings/torch
+
+# Step 6: Install OptiX SDK
 COPY NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64.sh ./
 RUN chmod +x ./NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64.sh && \
     ./NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64.sh --include-subdir --skip-license
@@ -115,18 +123,15 @@ ENV OPTIX_ROOT=/workspace/NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64
 ENV PATH=$OPTIX_ROOT/bin:$PATH
 
 # Step 7: Set PyTorch and pybind11 directories
-RUN echo "export Torch_DIR=\$(python -c \"import torch; print(torch.utils.cmake_prefix_path)\")/Torch" >> /workspace/setup_env.sh && \
-    echo "export pybind11_DIR=\$(python -c \"import pybind11; print(pybind11.get_cmake_dir())\")" >> /workspace/setup_env.sh && \
-    echo "export OptiX_INSTALL_DIR=/workspace/NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64" >> /workspace/setup_env.sh && \
-    echo "export OPENCV_IO_ENABLE_OPENEXR=True" >> /workspace/setup_env.sh && \
-    echo "export CC=/usr/bin/gcc-${GCC_VERSION}" >> /workspace/setup_env.sh && \
-    echo "export CXX=/usr/bin/g++-${GXX_VERSION}" >> /workspace/setup_env.sh && \
-    echo "export CXXFLAGS=\"-std=c++${CXX_STANDARD}\"" >> /workspace/setup_env.sh && \
-    echo "export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:\${LD_LIBRARY_PATH}" >> /workspace/setup_env.sh && \
-    chmod +x /workspace/setup_env.sh
-
-# Copy source code
-COPY . ./
+# RUN echo "export Torch_DIR=\$(python -c \"import torch; print(torch.utils.cmake_prefix_path)\")/Torch" >> /workspace/setup_env.sh && \
+#     echo "export pybind11_DIR=\$(python -c \"import pybind11; print(pybind11.get_cmake_dir())\")" >> /workspace/setup_env.sh && \
+#     echo "export OptiX_INSTALL_DIR=/workspace/NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64" >> /workspace/setup_env.sh && \
+#     echo "export OPENCV_IO_ENABLE_OPENEXR=True" >> /workspace/setup_env.sh && \
+#     echo "export CC=/usr/bin/gcc-${GCC_VERSION}" >> /workspace/setup_env.sh && \
+#     echo "export CXX=/usr/bin/g++-${GXX_VERSION}" >> /workspace/setup_env.sh && \
+#     echo "export CXXFLAGS=\"-std=c++${CXX_STANDARD}\"" >> /workspace/setup_env.sh && \
+#     echo "export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:\${LD_LIBRARY_PATH}" >> /workspace/setup_env.sh && \
+#     chmod +x /workspace/setup_env.sh
 
 # Step 8: Build PyRT module
 RUN cd ./code/pyrt && \
@@ -153,18 +158,7 @@ RUN cd ./code/pyrt && \
 
 # ENTRYPOINT ["cd", "/workspace/code", "&&", "python3", "training/train.py"]
 
+
 # Set working directory to code for training
 # WORKDIR /workspace/code
 WORKDIR /workspace
-
-# Set the entrypoint to run the training script directly
-# ENTRYPOINT ["python3", "training/train.py"]
-
-# docker run --gpus all --rm -it --entrypoint /bin/bash ghcr.io/fabiolddo/pbrnerf:latest
-
-# docker run --gpus all --rm -it --entrypoint /bin/bash -v ./datasets:/workspace/datasets/ -v /usr/lib/x86_64-linux-gnu/libnvoptix.so.1:/usr/lib/x86_64-linux-gnu/libnvoptix.so.1:ro -v /usr/lib/x86_64-linux-gnu/libnvidia-rtcore.so.535.261.03:/usr/lib/x86_64-linux-gnu/libnvidia-rtcore.so.535.261.03:ro ghcr.io/fabiolddo/pbrnerf:latest
-
-
-# docker run --gpus all --rm -it --entrypoint /bin/bash -v ./datasets:/workspace/datasets/ -v /usr/lib/x86_64-linux-gnu/libnvoptix.so.1:/usr/lib/x86_64-linux-gnu/libnvoptix.so.1:ro -v /usr/lib/x86_64-linux-gnu/libnvidia-rtcore.so.535.261.03:/usr/lib/x86_64-linux-gnu/libnvidia-rtcore.so.535.261.03:ro  -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:rw ghcr.io/fabiolddo/pbrnerf:latest
-
-
