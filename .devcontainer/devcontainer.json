@@ -1,0 +1,30 @@
+{
+  "name": "PBR-NeRF Dev Container",
+  "image": "ghcr.io/fabiolddo/pbrnerf:latest",
+  
+  "runArgs": [
+    "--gpus=all",
+    "-v", "/usr/lib/x86_64-linux-gnu/libnvoptix.so.1:/usr/lib/x86_64-linux-gnu/libnvoptix.so.1:ro",
+    "-v", "/usr/lib/x86_64-linux-gnu/libnvidia-rtcore.so.575.57.08:/usr/lib/x86_64-linux-gnu/libnvidia-rtcore.so.575.57.08:ro"
+  ],
+  
+//   "mounts": [
+//     "source=${localWorkspaceFolder}/datasets,target=/workspace/datasets,type=bind"
+//   ],
+  
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-toolsai.jupyter"
+      ]
+    }
+  },
+  
+  "postCreateCommand": "python -c 'import torch; print(f\"CUDA: {torch.cuda.is_available()}\")'",
+  
+  "remoteUser": "root"
+}
