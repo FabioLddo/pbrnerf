@@ -34,3 +34,23 @@ python training/train.py \
   --override_spec_weighting $SPEC_LOSS \
   --config_path configs/config_synthetic_data_pbrnerf_neilfpp.json
 
+
+# Example for NeILF++ "city"
+# python evaluation/evaluate.py \
+#   /workspace/datasets/neilfpp_synthetic/synthetic_city \
+#   /workspace/outputs \
+#   --config_path configs/config_synthetic_data_pbrnerf_neilfpp.json \
+#   --phase joint \
+#   --eval_brdf \
+#   --export_brdf \
+#   --export_nvs \
+#   --export_mesh \
+#   --export_lighting
+
+# python evaluation/evaluate.py \
+#   /workspace/datasets/neilfpp_synthetic/synthetic_city \
+#   /workspace/outputs \
+#   --config_path configs/config_synthetic_data_pbrnerf_neilfpp.json \
+#   --phase joint --export_mesh 
+
+
