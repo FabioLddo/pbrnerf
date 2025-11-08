@@ -1,0 +1,145 @@
+# Fixed Dockerfile with proper dependency ordering and setuptools handling
+
+FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
+
+# Build arguments for flexible configuration
+ARG GCC_VERSION=10
+ARG GXX_VERSION=10
+ARG CXX_STANDARD=17
+
+ARG CUDA_VERSION=11.8
+ARG CUDA_ARCHITECTURES="89"
+
+ARG OPTIX_VERSION=7.6.0
+
+ARG PYTHON_VERSION=3.10
+ARG PYTORCH_VERSION=2.4.0
+ARG TORCHVISION_VERSION=0.19.0
+ARG TORCHAUDIO_VERSION=2.4.0
+ARG TORCH_CUDA_ARCH_LIST="7.0;7.5;8.0;8.6;8.7;8.9;9.0;9.0+PTX"
+
+ARG MKL_VERSION=2023.1.0
+
+ARG PIP_TIMEOUT=300
+ARG PIP_RETRIES=5
+
+# Environment variables synchronized with build args
+ENV DEBIAN_FRONTEND=noninteractive
+ENV OPENCV_IO_ENABLE_OPENEXR=True
+ENV CC=/usr/bin/gcc-${GCC_VERSION}
+ENV CXX=/usr/bin/g++-${GXX_VERSION}
+ENV CXXFLAGS="-std=c++${CXX_STANDARD}"
+ENV OPTIX_VERSION=${OPTIX_VERSION}
+ENV PYTORCH_VERSION=${PYTORCH_VERSION}
+ENV TORCHVISION_VERSION=${TORCHVISION_VERSION}
+ENV TORCHAUDIO_VERSION=${TORCHAUDIO_VERSION}
+ENV TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_LIST}
+ENV PIP_DEFAULT_TIMEOUT=${PIP_TIMEOUT}
+ENV PIP_RETRIES=${PIP_RETRIES}
+
+WORKDIR /workspaces/pbrnerf
+
+# Step 1: Update system and install dependencies
+RUN apt-get update -qq && \
+    apt-get install -y -qq \
+        wget \
+        curl \
+        git \
+        cmake \
+        build-essential \
+        python3 \
+        python3-pip \
+        python3-venv \
+        libgl1-mesa-glx \
+        libglib2.0-0 \
+        libsm6 \
+        libxext6 \
+        libxrender-dev \
+        libgomp1 \
+        libglu1-mesa-dev \
+        freeglut3-dev \
+        mesa-common-dev \
+        xorg-dev \
+        gcc-${GCC_VERSION} \
+        g++-${GXX_VERSION} \
+        libopenexr-dev \
+        zlib1g-dev \
+        doxygen && \
+    ln -sf /usr/bin/python3 /usr/bin/python && \
+    update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-${GCC_VERSION} 100 && \
+    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-${GXX_VERSION} 100 && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Step 2: Upgrade pip and setuptools with version pinning
+# IMPORTANT: Pin setuptools to < 81 to avoid pkg_resources deprecation issues
+RUN pip install --no-cache-dir --upgrade "pip>=24.0" "setuptools<81" "wheel"
+
+# Step 3: Install PyTorch with CUDA support
+# This MUST come before tiny-cuda-nn installation
+RUN /bin/bash -c 'pip install --no-cache-dir torch==${PYTORCH_VERSION} torchvision==${TORCHVISION_VERSION} torchaudio==${TORCHAUDIO_VERSION} --index-url https://download.pytorch.org/whl/cu${CUDA_VERSION//./}'
+
+# Step 4: Install core Python dependencies (before pybind11)
+RUN pip install --no-cache-dir mkl==2023.1.0
+
+# Step 5: Install pybind11 BEFORE tiny-cuda-nn compilation
+# This ensures it's available during setup.py execution
+RUN pip install --no-cache-dir "pybind11<2.12"
+
+# Step 6: Install remaining Python dependencies
+RUN pip install --no-input --no-cache-dir \
+    lpips \
+    opencv-python \
+    open3d \
+    tqdm \
+    imageio \
+    scikit-image \
+    scikit-learn \
+    trimesh \
+    pyexr \
+    einops \
+    wandb \
+    OpenEXR \
+    matplotlib \
+    numpy
+
+# Step 7: Install ninja (used by tiny-cuda-nn build system)
+RUN pip install --no-cache-dir ninja
+
+# Step 8: Install tiny-cuda-nn
+# At this point PyTorch is already installed and available for the build
+RUN TCNN_CUDA_ARCHITECTURES="${CUDA_ARCHITECTURES}" pip install --no-cache-dir git+https://github.com/NVlabs/tiny-cuda-nn/#subdirectory=bindings/torch
+
+# Step 9: Install OptiX SDK
+COPY NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64.sh ./
+RUN chmod +x ./NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64.sh && \
+    ./NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64.sh --include-subdir --skip-license
+
+ENV OptiX_INSTALL_DIR=/workspace/NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64
+ENV LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:${LD_LIBRARY_PATH}
+ENV OPTIX_ROOT=/workspace/NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64
+ENV PATH=$OPTIX_ROOT/bin:$PATH
+
+# Step 10: Build PyRT module
+RUN cd ./code/pyrt && \
+    mkdir -p build && \
+    cd build && \
+    export Torch_DIR=$(python -c "import torch; print(torch.utils.cmake_prefix_path)")/Torch && \
+    export pybind11_DIR=$(python -c "import pybind11; print(pybind11.get_cmake_dir())") && \
+    cmake .. \
+        -DCMAKE_CXX_STANDARD=${CXX_STANDARD} \
+        -DCMAKE_CXX_STANDARD_REQUIRED=ON \
+        -DCMAKE_CXX_EXTENSIONS=OFF \
+        -DCMAKE_CUDA_ARCHITECTURES=${CUDA_ARCHITECTURES} \
+        -DOptiX_INSTALL_DIR=$OptiX_INSTALL_DIR \
+        -DTorch_DIR=$Torch_DIR \
+        -Dpybind11_DIR=$pybind11_DIR && \
+    make pyrt -j$(nproc)
+
+RUN ln -sf /usr/lib/x86_64-linux-gnu/libnvoptix.so.575.57.08 /usr/lib/x86_64-linux-gnu/libnvoptix.so.1
+
+# Copy source code AFTER installations to preserve layer cache
+COPY . ./
+
+# Set working directory to code for training
+WORKDIR /workspace

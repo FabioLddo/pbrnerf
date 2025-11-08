@@ -7,7 +7,7 @@ ARG CXX_STANDARD=17
 
 ARG CUDA_VERSION=11.8
 ARG CUDA_ARCHITECTURES="90;89;86;80;75;70;61"
-ARG CUDA_ARCHITECTURES="89"
+#ARG CUDA_ARCHITECTURES="89"
 
 ARG OPTIX_VERSION=7.6.0
 
@@ -108,10 +108,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Step 5: Install tiny-cuda-nn
 #RUN pip3 install --no-cache-dir "pybind11<2.12" ninja
 #RUN TCNN_CUDA_ARCHITECTURES="${CUDA_ARCHITECTURES}" pip install --no-cache-dir -v ninja git+https://github.com/NVlabs/tiny-cuda-nn@v1.6#subdirectory=bindings/torch
-RUN TCNN_CUDA_ARCHITECTURES="${CUDA_ARCHITECTURES}" pip install --no-cache-dir -v ninja git+https://github.com/NVlabs/tiny-cuda-nn#subdirectory=bindings/torch
+#RUN TCNN_CUDA_ARCHITECTURES="${CUDA_ARCHITECTURES}" pip install --no-cache-dir -v ninja git+https://github.com/NVlabs/tiny-cuda-nn#subdirectory=bindings/torch
 
 # Alternative: Install tiny-cuda-nn from local files, necessary for Cluster builds
-# RUN TCNN_CUDA_ARCHITECTURES="${CUDA_ARCHITECTURES}" pip install --no-cache-dir -v ninja tiny-cuda-nn/bindings/torch
+RUN TCNN_CUDA_ARCHITECTURES="${CUDA_ARCHITECTURES}" pip install --no-cache-dir -v ninja tiny-cuda-nn/bindings/torch
 
 # Step 6: Install OptiX SDK
 COPY NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64.sh ./

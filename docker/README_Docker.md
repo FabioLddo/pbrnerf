@@ -160,41 +160,68 @@ make -j$(nproc)
 
 Test:
 
+[//]: # (```bash)
+
+[//]: # (# clean and reconfigure the OptiX SDK samples)
+
+[//]: # (cd /workspace/NVIDIA-OptiX-SDK-7.6.0-linux64-x86_64/SDK)
+
+[//]: # (rm -rf build && mkdir build && cd build)
+
+[//]: # ()
+[//]: # (cmake .. \)
+
+[//]: # (  -DCMAKE_BUILD_TYPE=Release \)
+
+[//]: # (  -DCMAKE_CUDA_STANDARD=17 \)
+
+[//]: # (  -DCMAKE_CUDA_STANDARD_REQUIRED=ON \)
+
+[//]: # (  -DCMAKE_CXX_STANDARD=17 \)
+
+[//]: # (  -DCMAKE_CXX_STANDARD_REQUIRED=ON \)
+
+[//]: # (  -DCMAKE_CUDA_HOST_COMPILER=/usr/bin/g++-9 \)
+
+[//]: # (  -DCMAKE_CUDA_ARCHITECTURES=89)
+
+[//]: # ()
+[//]: # (# build the samples you need &#40;or 'make -j$&#40;nproc&#41;'&#41;)
+
+[//]: # (make -j"$&#40;nproc&#41;" optixHello optixPathTracer)
+
+[//]: # ()
+[//]: # (./optixHello)
+
+[//]: # (./optixPathTracer)
+
+[//]: # ()
+[//]: # (# or )
+
+[//]: # ()
+[//]: # (make -k)
+
+[//]: # ()
+[//]: # (```)
+
+[//]: # ()
+[//]: # (```bash)
+
+[//]: # ()
+[//]: # (docker run --gpus all --rm -it --entrypoint /bin/bash ghcr.io/fabiolddo/pbrnerf:latest)
+
+[//]: # ()
+[//]: # (docker run --gpus all --rm -it --entrypoint /bin/bash -v ./datasets:/workspace/datasets/ -v /usr/lib/x86_64-linux-gnu/libnvoptix.so.1:/usr/lib/x86_64-linux-gnu/libnvoptix.so.1:ro -v /usr/lib/x86_64-linux-gnu/libnvidia-rtcore.so.535.261.03:/usr/lib/x86_64-linux-gnu/libnvidia-rtcore.so.535.261.03:ro ghcr.io/fabiolddo/pbrnerf:latest)
+
+[//]: # ()
+[//]: # ()
+[//]: # (docker run --gpus all --rm -it --entrypoint /bin/bash -v ./datasets:/workspace/datasets/ -v /usr/lib/x86_64-linux-gnu/libnvoptix.so.1:/usr/lib/x86_64-linux-gnu/libnvoptix.so.1:ro -v /usr/lib/x86_64-linux-gnu/libnvidia-rtcore.so.535.261.03:/usr/lib/x86_64-linux-gnu/libnvidia-rtcore.so.535.261.03:ro  -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:rw ghcr.io/fabiolddo/pbrnerf:latest)
+
+[//]: # (```)
+
 ```bash
-
-# clean and reconfigure the OptiX SDK samples
-cd /workspace/NVIDIA-OptiX-SDK-7.6.0-linux64-x86_64/SDK
-rm -rf build && mkdir build && cd build
-
-cmake .. \
-  -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_CUDA_STANDARD=17 \
-  -DCMAKE_CUDA_STANDARD_REQUIRED=ON \
-  -DCMAKE_CXX_STANDARD=17 \
-  -DCMAKE_CXX_STANDARD_REQUIRED=ON \
-  -DCMAKE_CUDA_HOST_COMPILER=/usr/bin/g++-9 \
-  -DCMAKE_CUDA_ARCHITECTURES=89
-
-# build the samples you need (or 'make -j$(nproc)')
-make -j"$(nproc)" optixHello optixPathTracer
-
-./optixHello
-./optixPathTracer
-
-# or 
-
-make -k
-
-```
-
-```bash
-
-docker run --gpus all --rm -it --entrypoint /bin/bash ghcr.io/fabiolddo/pbrnerf:latest
-
-docker run --gpus all --rm -it --entrypoint /bin/bash -v ./datasets:/workspace/datasets/ -v /usr/lib/x86_64-linux-gnu/libnvoptix.so.1:/usr/lib/x86_64-linux-gnu/libnvoptix.so.1:ro -v /usr/lib/x86_64-linux-gnu/libnvidia-rtcore.so.535.261.03:/usr/lib/x86_64-linux-gnu/libnvidia-rtcore.so.535.261.03:ro ghcr.io/fabiolddo/pbrnerf:latest
-
-
-docker run --gpus all --rm -it --entrypoint /bin/bash -v ./datasets:/workspace/datasets/ -v /usr/lib/x86_64-linux-gnu/libnvoptix.so.1:/usr/lib/x86_64-linux-gnu/libnvoptix.so.1:ro -v /usr/lib/x86_64-linux-gnu/libnvidia-rtcore.so.535.261.03:/usr/lib/x86_64-linux-gnu/libnvidia-rtcore.so.535.261.03:ro  -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix:rw ghcr.io/fabiolddo/pbrnerf:latest
+docker build --progress=plain -t my-image . > build.log 2>&1
+docker build --progress=plain -t ghcr.io/fabiolddo/pbrnerf:snapshot . -f docker/Dockerfile > build.log 2>&1
 ```
 
 
