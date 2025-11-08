@@ -124,6 +124,10 @@ class NeILFDataset(torch.utils.data.Dataset):
             self.tex_coords = []
             for pos_tex_file in pos_tex_files:
                 coord, coord_mask = io.load_tex_coord(pos_tex_file)                             # [H, W, 3], [H, W]
+
+                print('check coord_mask:')
+                print(coord.shape, coord_mask.shape)
+
                 coord_shape = coord.shape[:2]
                 coord = torch.from_numpy(coord[coord_mask]).float()                             # [N_v, 3]
                 # convert Blender coordinate system to ours

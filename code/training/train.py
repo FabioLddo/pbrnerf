@@ -371,7 +371,9 @@ class NeILFTrainer():
             total_pixels = self.total_pixels
         else:
             downsample = self.eval_downsample
-            total_pixels = self.total_pixels // (downsample**2)
+            H = self.image_resolution[0] // downsample
+            W = self.image_resolution[1] // downsample
+            total_pixels = H * W
         model_input, ground_truth = self.dataset.get_validation_data(downsample)
 
         model_input = {k: v.cuda() for k, v in model_input.items()}
@@ -673,19 +675,34 @@ if __name__ == '__main__':
     # TODO: compute entire sampling PDF
 
     # Run evaluation as well
-    if not args.debug:
-        evaluate(input_data_folder=args.input_folder,
-                output_model_folder=args.output_folder,
-                config_path=args.config_path,
-                load_phase="joint",
-                timestamp=last_timestamp,
-                checkpoint="latest",
-                eval_nvs=True,
-                eval_brdf=config['dataset']['use_brdf_gt'],
-                eval_lighting=True,
-                export_mesh=False,
-                export_nvs=True,
-                export_brdf=False,
-                export_lighting=True,
-                wandb_run=wandb_run)
+    # if not args.debug:
+    #     evaluate(input_data_folder=args.input_folder,
+    #             output_model_folder=args.output_folder,
+    #             config_path=args.config_path,
+    #             load_phase="joint",
+    #             timestamp=last_timestamp,
+    #             checkpoint="latest",
+    #             eval_nvs=True,
+    #             eval_brdf=config['dataset']['use_brdf_gt'],
+    #             eval_lighting=True,
+    #             export_mesh=False,
+    #             export_nvs=True,
+    #             export_brdf=False,
+    #             export_lighting=True,
+    #             wandb_run=wandb_run)
 
+    # if not args.debug:
+    evaluate(input_data_folder=args.input_folder,
+            output_model_folder=args.output_folder,
+            config_path=args.config_path,
+            load_phase="joint",
+            timestamp=last_timestamp,
+            checkpoint="latest",
+            eval_nvs=True,
+            eval_brdf=config['dataset']['use_brdf_gt'],
+            eval_lighting=True,
+            export_mesh=True,
+            export_nvs=True,
+            export_brdf=True,
+            export_lighting=True,
+            wandb_run=wandb_run)
