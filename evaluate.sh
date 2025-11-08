@@ -20,15 +20,22 @@ SCENES=(
 TAGS="avg"
 cd code
 
-for scene in "${SCENES[@]}"; do
-    echo "Processing scene: $scene"
+# for scene in "${SCENES[@]}"; do
+#     echo "Processing scene: $scene"
 
-    # ./train_neilfpp_dtu_ngp.sh $scene $TAGS
-    # ./train_pbrnerf_dtu.sh $scene $TAGS
+#     # ./train_neilfpp_dtu_ngp.sh $scene $TAGS
+#     # ./train_pbrnerf_dtu.sh $scene $TAGS
 
-    python3 evaluation/evaluate.py \
-      /workspace/datasets/data_dtu/$scene \
-      /workspace/outputs/data_dtu_test/$scene \
-      --config_path configs/config_dtu_pbrnerf.json \
-      --export_brdf
-done
+#     python3 evaluation/evaluate.py \
+#       /workspace/datasets/data_dtu/$scene \
+#       /workspace/outputs/data_dtu_test/$scene \
+#       --config_path configs/config_dtu_pbrnerf.json \
+#       --export_brdf
+# done
+
+
+python3 evaluation/evaluate.py \
+    /workspace/datasets/data_nike_v2/ \
+    /workspace/outputs/data_nike_v2/ \
+    --config_path configs/config.json \
+    --export_brdf
