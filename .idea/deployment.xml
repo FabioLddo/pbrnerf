@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" serverName="fabio.loddo@thor.supsi.ch:22 agent" remoteFilesAllowedToDisappearOnAutoupload="false">
+    <serverData>
+      <paths name="fabio.loddo@thor.supsi.ch:22 agent">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/scratch/pbrnerf" local="$PROJECT_DIR$" web="/" />
+          </mappings>
+          <excludedPaths>
+            <excludedPath path="/scratch/pbrnerf/datasets" />
+            <excludedPath path="/scratch/pbrnerf/outputs" />
+            <excludedPath path="/scratch/pbrnerf/NVIDIA-OptiX-SDK-7.6.0-linux64-x86_64" />
+            <excludedPath path="/scratch/pbrnerf/tiny-cuda-nn" />
+            <excludedPath path="/scratch/pbrnerf/code/wandb" />
+          </excludedPaths>
+        </serverdata>
+      </paths>
+    </serverData>
+  </component>
+</project>
