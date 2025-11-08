@@ -1,0 +1,17 @@
+lpips
+opencv-python
+open3d
+tqdm
+imageio
+scikit-image
+scikit-learn
+trimesh
+pyexr
+einops
+wandb
+OpenEXR
+matplotlib
+numpy
+pybind11<2.12
+ninja
+mkl==2023.1.0

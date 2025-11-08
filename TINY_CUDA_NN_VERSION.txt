@@ -1,0 +1,4 @@
+68d4f0f1f81fa9085fff66077d9966c8323095bc
+Repository: https://github.com/NVlabs/tiny-cuda-nn
+Branch: master
+Date: sab 8 nov 2025, 12:47:35, UTC
