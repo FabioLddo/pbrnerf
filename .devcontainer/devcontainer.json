@@ -1,6 +1,6 @@
 {
   "name": "PBR-NeRF Dev Container",
-  "image": "ghcr.io/fabiolddo/pbrnerf:latest",
+  "image": "ghcr.io/fabiolddo/pbrnerf:dev-server-36dd71c",
   
   "runArgs": [
     "--gpus=all",
@@ -12,8 +12,8 @@
 //     "source=${localWorkspaceFolder}/datasets,target=/workspace/datasets,type=bind"
 //   ],
   
-  "workspaceFolder": "/workspace",
-  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "workspaceFolder": "/workspaces/pbrnerf",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/pbrnerf,type=bind",
   
   "customizations": {
     "vscode": {
