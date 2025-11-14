@@ -108,23 +108,25 @@ def process_folder(input_dir: Path, output_dir: Path, images_subdir: str, masks_
             print(f"Exists `{out_path}`, skipping. Use --overwrite to replace.", file=sys.stderr)
             continue
 
-        # Load image and mask
-        with Image.open(img_path) as im:
-            im = im.convert('RGB')
-            rgb = np.array(im, dtype=np.uint8)  # HxWx3
+        # Load image (handles EXR or raster) and mask
+        try:
+            rgb_f = load_rgb_image(img_path, linearize=linearize)
+        except Exception as e:
+            print(f"Failed to load image `{img_path}`: {e}", file=sys.stderr)
+            continue
 
         with Image.open(mask_path) as mm:
             mm = mm.convert('L')
-            if mm.size != (rgb.shape[1], rgb.shape[0]):
-                mm = mm.resize((rgb.shape[1], rgb.shape[0]), resample=Image.NEAREST)
+            if mm.size != (rgb_f.shape[1], rgb_f.shape[0]):
+                mm = mm.resize((rgb_f.shape[1], rgb_f.shape[0]), resample=Image.NEAREST)
             mask_u8 = np.array(mm, dtype=np.uint8)  # HxW
 
-        # Convert to float
-        if linearize:
-            rgb_f = srgb_to_linear_uint8_rgb(rgb)  # HxWx3 in [0,1]
-        else:
-            rgb_f = (rgb.astype(np.float32) / 255.0).clip(0.0, 1.0)
-            # rgb_f = rgb
+        # # Convert to float
+        # if linearize:
+        #     rgb_f = srgb_to_linear_uint8_rgb(rgb)  # HxWx3 in [0,1]
+        # else:
+        #     rgb_f = (rgb.astype(np.float32) / 255.0).clip(0.0, 1.0)
+        #     # rgb_f = rgb
 
         alpha = to_float_mask(mask_u8)  # HxW in [0,1]
         rgba = np.dstack([rgb_f, alpha])  # HxWx4
@@ -189,7 +191,8 @@ def main():
     parser.add_argument("--output", "-o", type=Path, required=True, help="Output folder for .exr files.")
     parser.add_argument("--images-subdir", default="images", help="Subfolder under input for JPGs (default: images).")
     parser.add_argument("--masks-subdir", default="masks", help="Subfolder under input for masks (default: masks).")
-    parser.add_argument("--linearize-srgb", action="store_true", help="Convert JPG sRGB to linear before writing EXR.")
+    parser.add_argument("--linearize-srgb", action="store_true",
+                        help="Convert JPG/PNG sRGB to linear (ignored for EXR input).")
     parser.add_argument("--overwrite", action="store_true", help="Overwrite existing .exr files.")
     args = parser.parse_args()
 
