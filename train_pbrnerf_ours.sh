@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Set the default scene
-SCENE="data_nike_v2"
+SCENE="data_nike_v3"
 # TAGS="debug"
 TAGS="avg"
 CONS_LOSS=0.0

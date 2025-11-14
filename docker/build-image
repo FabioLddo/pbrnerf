@@ -1,0 +1,75 @@
+#!/usr/bin/bash
+
+# Get commit SHA (short version)
+commit_sha=$(git rev-parse --short HEAD)
+
+# Default versions
+gcc_version=${1:-10}
+cuda_version=${2:-11.8}
+optix_version=${3:-7.6.0}
+pytorch_version=${4:-2.4.0}
+
+# Image name
+image_name="ghcr.io/fabiolddo/pbrnerf"
+base_tag="dev-server"
+
+echo "Building image with:"
+echo "  Commit SHA: $commit_sha"
+echo "  GCC Version: $gcc_version"
+echo "  CUDA Version: $cuda_version"
+echo "  OptiX Version: $optix_version"
+echo "  PyTorch Version: $pytorch_version"
+
+# Create entrypoint script
+cat > entrypoint.sh << EOF
+#!/bin/bash
+echo "=========================================="
+echo "PBRNeRF Docker Image"
+echo "=========================================="
+echo "Git Commit: $commit_sha"
+echo "Build Date: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
+echo "------------------------------------------"
+echo "GCC Version: $gcc_version"
+echo "CUDA Version: $cuda_version"
+echo "OptiX Version: $optix_version"
+echo "PyTorch Version: $pytorch_version"
+echo "=========================================="
+echo ""
+exec "\$@"
+EOF
+
+chmod +x entrypoint.sh
+
+echo "Building image with:"
+echo "  Commit SHA: $commit_sha"
+echo "  GCC Version: $gcc_version"
+echo "  CUDA Version: $cuda_version"
+echo "  OptiX Version: $optix_version"
+echo "  PyTorch Version: $pytorch_version"
+
+# Build the image
+docker build -t ${image_name}:${base_tag} \
+  -f docker/dev-server.dockerfile \
+  --build-arg GCC_VERSION=$gcc_version \
+  --build-arg CUDA_VERSION=$cuda_version \
+  --build-arg OPTIX_VERSION=$optix_version \
+  --build-arg PYTORCH_VERSION=$pytorch_version \
+  --label "git.commit=$commit_sha" \
+  --label "build.date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
+  .
+
+# Clean up entrypoint script
+rm entrypoint.sh
+
+# Tag with commit SHA
+docker tag ${image_name}:${base_tag} ${image_name}:latest
+docker tag ${image_name}:${base_tag} ${image_name}:${base_tag}-${commit_sha}
+
+echo ""
+echo "Build complete! Tagged images:"
+echo "  ${image_name}:${base_tag}"
+echo "  ${image_name}:${base_tag}-${commit_sha}"
+echo ""
+echo "To push images, run:"
+echo "  docker push ${image_name}:${base_tag}"
+echo "  docker push ${image_name}:${base_tag}-${commit_sha}"

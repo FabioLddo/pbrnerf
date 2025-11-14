@@ -163,6 +163,12 @@ RUN ln -sf /usr/lib/x86_64-linux-gnu/libnvoptix.so.575.57.08 /usr/lib/x86_64-lin
 # ENTRYPOINT ["cd", "/workspace/code", "&&", "python3", "training/train.py"]
 
 
+# Copy and set entrypoint
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+
 # Set working directory to code for training
 WORKDIR ${WORKSPACE_DIR}
 
