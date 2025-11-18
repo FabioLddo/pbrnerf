@@ -156,9 +156,8 @@ RUN ln -sf /usr/lib/x86_64-linux-gnu/libnvoptix.so.575.57.08 /usr/lib/x86_64-lin
 #     python -c "import tinycudann as tcnn; print('tiny-cuda-nn imported successfully')" && \
 #     cd /workspace/code/pyrt/build && python -c "import pyrt; print('PyRT imported successfully')"
 
-COPY entrypoint.sh ${WORKSPACE_DIR}/entrypoint.sh
-RUN chmod +x ${WORKSPACE_DIR}/entrypoint.sh
-
+# COPY entrypoint.sh ${WORKSPACE_DIR}/entrypoint.sh
+# RUN chmod +x ${WORKSPACE_DIR}/entrypoint.sh
 
 # Set working directory to code for training
 WORKDIR ${WORKSPACE_DIR}

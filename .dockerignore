@@ -8,3 +8,4 @@ docker/
 build
 .idea
 .vscode
+slurm_scripts/
