@@ -371,9 +371,10 @@ class NeILFTrainer():
             total_pixels = self.total_pixels
         else:
             downsample = self.eval_downsample
-            H = self.image_resolution[0] // downsample
-            W = self.image_resolution[1] // downsample
-            total_pixels = H * W
+            total_pixels = self.total_pixels // (downsample**2)
+            # H = self.image_resolution[0] // downsample
+            # W = self.image_resolution[1] // downsample
+            # total_pixels = H * W
         model_input, ground_truth = self.dataset.get_validation_data(downsample)
 
         model_input = {k: v.cuda() for k, v in model_input.items()}
@@ -420,6 +421,32 @@ class NeILFTrainer():
         W = self.image_resolution[1] // (1 if is_last else self.eval_downsample)
         batch_size = ground_truth['rgb'].shape[0]
 
+        # --- Start of logging ---
+        print("\n--- Plot Geo Debug Info ---")
+        print(f"Iteration: {iteration}, Is Last: {is_last}")
+        print(f"Image Resolution: {self.image_resolution}")
+        print(f"Eval Downsample: {self.eval_downsample}")
+        print(f"Calculated H: {H}, Calculated W: {W}")
+        print(f"Ground Truth RGB Shape: {ground_truth['rgb'].shape}")
+        print(f"Batch Size: {batch_size}")
+        print("Ground Truth keys and shapes:")
+        for k, v in ground_truth.items():
+            if hasattr(v, 'shape'):
+                print(f"  - {k}: {v.shape}")
+            else:
+                print(f"  - {k}: (not a tensor)")
+        print("--- End of Plot Geo Debug Info ---\n")
+
+        # if self.wandb_run:
+        #     log_data = {
+        #         f'val/{self.phase}/plot_geo_H': H,
+        #         f'val/{self.phase}/plot_geo_W': W,
+        #         f'val/{self.phase}/plot_geo_batch_size': batch_size,
+        #         f'val/{self.phase}/plot_geo_is_last': 1 if is_last else 0,
+        #     }
+        #     self.wandb_run.log(log_data, commit=False)
+        # --- End of logging ---
+
         # rendered mask
         mask = model_outputs['render_masks'].reshape([batch_size, H, W, 1]).float()
 
@@ -456,6 +483,23 @@ class NeILFTrainer():
         H = self.image_resolution[0] // (1 if is_last else self.eval_downsample)
         W = self.image_resolution[1] // (1 if is_last else self.eval_downsample)
         batch_size = ground_truth['rgb'].shape[0]
+
+        # --- Start of logging ---
+        print("\n--- Plot mat Debug Info ---")
+        print(f"Iteration: {iteration}, Is Last: {is_last}")
+        print(f"Image Resolution: {self.image_resolution}")
+        print(f"Eval Downsample: {self.eval_downsample}")
+        print(f"Calculated H: {H}, Calculated W: {W}")
+        print(f"Ground Truth RGB Shape: {ground_truth['rgb'].shape}")
+        print(f"Batch Size: {batch_size}")
+        print("Ground Truth keys and shapes:")
+        for k, v in ground_truth.items():
+            if hasattr(v, 'shape'):
+                print(f"  - {k}: {v.shape}")
+            else:
+                print(f"  - {k}: (not a tensor)")
+        print("--- End of Plot mat Debug Info ---\n")
+        # --- End of logging ---
 
         # rendered mask
         mask = model_outputs['render_masks'].reshape([batch_size, H, W, 1]).float()
@@ -675,23 +719,6 @@ if __name__ == '__main__':
     # TODO: compute entire sampling PDF
 
     # Run evaluation as well
-    # if not args.debug:
-    #     evaluate(input_data_folder=args.input_folder,
-    #             output_model_folder=args.output_folder,
-    #             config_path=args.config_path,
-    #             load_phase="joint",
-    #             timestamp=last_timestamp,
-    #             checkpoint="latest",
-    #             eval_nvs=True,
-    #             eval_brdf=config['dataset']['use_brdf_gt'],
-    #             eval_lighting=True,
-    #             export_mesh=False,
-    #             export_nvs=True,
-    #             export_brdf=False,
-    #             export_lighting=True,
-    #             wandb_run=wandb_run)
-
-    # if not args.debug:
     evaluate(input_data_folder=args.input_folder,
             output_model_folder=args.output_folder,
             config_path=args.config_path,
