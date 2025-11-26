@@ -152,8 +152,8 @@ def main(colmap_sparse_dir, output_json, image_dir=None):
     }
 
     json_obj = {
-        "image_path": {"file_paths": image_file_list},
         "bbox": bbox,
+        "image_path": {"file_paths": image_file_list},
         "camera_track_map": camera_track_map
     }
 
