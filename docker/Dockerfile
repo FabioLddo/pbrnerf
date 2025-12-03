@@ -1,6 +1,28 @@
 # FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
 FROM nvcr.io/nvidia/cuda:11.8.0-devel-ubuntu22.04
 
+# Capture build-time git information
+ARG GIT_COMMIT=unknown
+ARG GIT_BRANCH=unknown
+ARG GIT_TAG=unknown
+ARG BUILD_DATE=unknown
+
+# OCI Labels with git information
+LABEL org.opencontainers.image.title="PBR-NeRF" \
+      org.opencontainers.image.description="Inverse Rendering with Physics-Based Neural Fields - CUDA 11.8, OptiX 7.6, PyTorch 2.4, Python 3.11" \
+      org.opencontainers.image.authors="FabioLddo" \
+      org.opencontainers.image.vendor="FabioLddo" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.url="https://github.com/FabioLddo/pbrnerf" \
+      org.opencontainers.image.source="https://github.com/FabioLddo/pbrnerf" \
+      org.opencontainers.image.documentation="https://github.com/FabioLddo/pbrnerf/blob/dev/README.md" \
+      org.opencontainers.image.version="${GIT_TAG}" \
+      org.opencontainers.image.revision="${GIT_COMMIT}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      git.commit="${GIT_COMMIT}" \
+      git.branch="${GIT_BRANCH}" \
+      git.tag="${GIT_TAG}"
+
 # Build arguments for flexible configuration
 ARG GCC_VERSION=10
 ARG GXX_VERSION=10
@@ -76,7 +98,6 @@ RUN apt-get update -qq && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-
 # Python
 RUN apt-get update && \
     apt-get install -y software-properties-common && \
@@ -91,6 +112,15 @@ RUN update-alternatives --set python /usr/bin/python$PYVER
 RUN python3 -m venv /venv
 
 RUN python3 -m pip install pip --upgrade
+
+#RUN git clone -b dev https://github.com/FabioLddo/pbrnerf.git ./
+
+# Add after the git clone step
+RUN echo '#!/bin/bash' > /usr/local/bin/build-info && \
+    echo 'echo "PBR-NeRF Build Information:"' >> /usr/local/bin/build-info && \
+    echo 'echo "=========================="' >> /usr/local/bin/build-info && \
+    echo 'docker inspect $(hostname) 2>/dev/null | jq ".[0].Config.Labels" || echo "Git Commit: $GIT_COMMIT"' >> /usr/local/bin/build-info && \
+    chmod +x /usr/local/bin/build-info
 
 # Step 2: Upgrade pip and setuptools
 #RUN pip install --no-cache-dir --upgrade pip setuptools
@@ -107,7 +137,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Step 5: Install tiny-cuda-nn
 RUN TCNN_CUDA_ARCHITECTURES="${CUDA_ARCHITECTURES}" pip install --no-cache-dir --no-build-isolation -v ninja git+https://github.com/FabioLddo/tiny-cuda-nn#subdirectory=bindings/torch
-
 
 # Step 6: Install OptiX SDK
 COPY NVIDIA-OptiX-SDK-${OPTIX_VERSION}-linux64-x86_64.sh ./

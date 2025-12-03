@@ -1,10 +1,8 @@
 datasets/
 outputs/
 x86_64-linux-gnu/
-.git/
 logs/
 .env
-docker/
 build
 .idea
 .vscode
