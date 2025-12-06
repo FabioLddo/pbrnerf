@@ -372,9 +372,6 @@ class NeILFTrainer():
         else:
             downsample = self.eval_downsample
             total_pixels = self.total_pixels // (downsample**2)
-            # H = self.image_resolution[0] // downsample
-            # W = self.image_resolution[1] // downsample
-            # total_pixels = H * W
         model_input, ground_truth = self.dataset.get_validation_data(downsample)
 
         model_input = {k: v.cuda() for k, v in model_input.items()}
@@ -719,6 +716,7 @@ if __name__ == '__main__':
     # TODO: compute entire sampling PDF
 
     # Run evaluation as well
+    # if not args.debug:
     evaluate(input_data_folder=args.input_folder,
             output_model_folder=args.output_folder,
             config_path=args.config_path,

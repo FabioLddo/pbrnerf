@@ -1,72 +1,100 @@
-#!/usr/bin/bash
-
-# Get commit SHA (short version)
-commit_sha=$(git rev-parse --short HEAD)
-
-# Default versions
-gcc_version=${1:-10}
-cuda_version=${2:-11.8}
-optix_version=${3:-7.6.0}
-pytorch_version=${4:-2.4.0}
-
-# Image name
-image_name="ghcr.io/fabiolddo/pbrnerf"
-base_tag="dev-server"
-
-echo "Building image with:"
-echo "  Commit SHA: $commit_sha"
-echo "  GCC Version: $gcc_version"
-echo "  CUDA Version: $cuda_version"
-echo "  OptiX Version: $optix_version"
-
-# Create entrypoint script
-cat > entrypoint.sh << EOF
 #!/bin/bash
-echo "=========================================="
-echo "PBRNeRF Docker Image"
-echo "=========================================="
-echo "Git Commit: $commit_sha"
-echo "Build Date: $(date -u +'%Y-%m-%d %H:%M:%S UTC')"
-echo "------------------------------------------"
-echo "GCC Version: $gcc_version"
-echo "CUDA Version: $cuda_version"
-echo "OptiX Version: $optix_version"
-echo "PyTorch Version: $pytorch_version"
-echo "=========================================="
+
+set -e
+
+# Configuration
+REGISTRY="ghcr.io"
+REPOSITORY="fabiolddo/pbrnerf"
+DOCKERFILE="docker/Dockerfile"
+
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m' # No Color
+
+# Get git information
+GIT_COMMIT=$(git rev-parse HEAD)
+GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+GIT_TAG=$(git describe --tags --exact-match 2>/dev/null || echo "none")
+BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
+
+echo -e "${GREEN}Building Docker image with:${NC}"
+echo "  Git Commit: $GIT_COMMIT"
+echo "  Git Branch: $GIT_BRANCH"
+echo "  Git Tag: $GIT_TAG"
+echo "  Build Date: $BUILD_DATE"
 echo ""
-exec "\$@"
-EOF
 
-chmod +x entrypoint.sh
+# Generate tags based on current context
+TAGS=()
 
-echo "Building image with:"
-echo "  Commit SHA: $commit_sha"
-echo "  GCC Version: $gcc_version"
-echo "  CUDA Version: $cuda_version"
-echo "  OptiX Version: $optix_version"
+# Branch-based tag
+TAGS+=("${REGISTRY}/${REPOSITORY}:${GIT_BRANCH}")
+
+# SHA-based tag
+TAGS+=("${REGISTRY}/${REPOSITORY}:${GIT_BRANCH}-${GIT_COMMIT:0:7}")
+
+# Tag-based tags (if on a tag)
+if [ "$GIT_TAG" != "none" ]; then
+    TAGS+=("${REGISTRY}/${REPOSITORY}:${GIT_TAG}")
+    # Extract version components
+    if [[ $GIT_TAG =~ ^v([0-9]+)\.([0-9]+)\.([0-9]+) ]]; then
+        MAJOR="${BASH_REMATCH[1]}"
+        MINOR="${BASH_REMATCH[2]}"
+        TAGS+=("${REGISTRY}/${REPOSITORY}:${MAJOR}.${MINOR}")
+        TAGS+=("${REGISTRY}/${REPOSITORY}:${MAJOR}")
+    fi
+fi
+
+# Latest tag (only for main branch)
+if [ "$GIT_BRANCH" = "main" ]; then
+    TAGS+=("${REGISTRY}/${REPOSITORY}:latest")
+fi
+
+# Build tag arguments for docker build
+TAG_ARGS=""
+for tag in "${TAGS[@]}"; do
+    TAG_ARGS="$TAG_ARGS -t $tag"
+done
+
+echo -e "${YELLOW}Tags to be applied:${NC}"
+for tag in "${TAGS[@]}"; do
+    echo "  - $tag"
+done
+echo ""
 
 # Build the image
-docker build -t ${image_name}:${base_tag} \
-  -f docker/Dockerfile \
-  --build-arg GCC_VERSION=$gcc_version \
-  --build-arg CUDA_VERSION=$cuda_version \
-  --build-arg OPTIX_VERSION=$optix_version \
-  --label "git.commit=$commit_sha" \
-  --label "build.date=$(date -u +'%Y-%m-%dT%H:%M:%SZ')" \
-  .
+echo -e "${GREEN}Building Docker image...${NC}"
+docker build \
+    -f "$DOCKERFILE" \
+    $TAG_ARGS \
+    --build-arg GIT_COMMIT="$GIT_COMMIT" \
+    --build-arg GIT_BRANCH="$GIT_BRANCH" \
+    --build-arg GIT_TAG="$GIT_TAG" \
+    --build-arg BUILD_DATE="$BUILD_DATE" \
+    .
 
-# Clean up entrypoint script
-rm entrypoint.sh
+echo -e "${GREEN}Build completed successfully!${NC}"
+echo ""
 
-# Tag with commit SHA
-docker tag ${image_name}:${base_tag} ${image_name}:latest
-docker tag ${image_name}:${base_tag} ${image_name}:${base_tag}-${commit_sha}
+# Ask if user wants to push
+read -p "Do you want to push the images to the registry? (y/n): " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    echo -e "${GREEN}Logging in to $REGISTRY...${NC}"
+    echo "$GITHUB_TOKEN" | docker login "$REGISTRY" -u "$GITHUB_ACTOR" --password-stdin
+
+    echo -e "${GREEN}Pushing images...${NC}"
+    for tag in "${TAGS[@]}"; do
+        echo "  Pushing $tag"
+        docker push "$tag"
+    done
+
+    echo -e "${GREEN}All images pushed successfully!${NC}"
+else
+    echo -e "${YELLOW}Skipping push. Images are built locally.${NC}"
+fi
 
 echo ""
-echo "Build complete! Tagged images:"
-echo "  ${image_name}:${base_tag}"
-echo "  ${image_name}:${base_tag}-${commit_sha}"
-echo ""
-echo "To push images, run:"
-echo "  docker push ${image_name}:${base_tag}"
-echo "  docker push ${image_name}:${base_tag}-${commit_sha}"
+echo -e "${GREEN}Done!${NC}"

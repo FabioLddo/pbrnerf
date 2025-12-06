@@ -5,8 +5,6 @@ import pyexr
 import skimage
 import json
 import torch
-from pathlib import Path
-
 
 def load_gray_image(path):
     ''' Load gray scale image (both uint8 and float32) into image in range [0, 1] '''
@@ -37,63 +35,12 @@ def load_gray_image_with_prefix(prefix):
     print ('Does not exists any image file with prefix: ' + prefix)
     return None
 
-def read_exr_all_channels(path: Path) -> np.ndarray:
-    """Read all channels from an EXR file using OpenEXR into a float32 HxWxN array."""
-    import OpenEXR, Imath
-    import numpy as np
-
-    exr = OpenEXR.InputFile(str(path))
-    dw = exr.header()['dataWindow']
-    w = dw.max.x - dw.min.x + 1
-    h = dw.max.y - dw.min.y + 1
-    pt = Imath.PixelType(Imath.PixelType.FLOAT)
-
-    channels = list(exr.header()['channels'].keys())
-    channel_arrays = []
-    for c in channels:
-        buf = exr.channel(c, pt)
-        arr = np.frombuffer(buf, dtype=np.float32).reshape(h, w)
-        channel_arrays.append(arr)
-
-    exr.close()
-    # Stack all channel arrays along the last axis
-    all_channels = np.stack(channel_arrays, axis=-1)
-    return np.clip(all_channels, 0.0, 1.0)
-
-def read_exr_rgba(path: Path) -> np.ndarray:
-    """Read RGBA from an EXR file into float32 array HxWx4 clipped to [0,1]."""
-    try:
-        import OpenEXR, Imath  # type: ignore
-        exr = OpenEXR.InputFile(str(path))
-        dw = exr.header()['dataWindow']
-        w = dw.max.x - dw.min.x + 1
-        h = dw.max.y - dw.min.y + 1
-        pt = Imath.PixelType(Imath.PixelType.FLOAT)
-        header_channels = exr.header()['channels'].keys()
-        def ch(name: str) -> np.ndarray:
-            if name in header_channels:
-                buf = exr.channel(name, pt)
-                arr = np.frombuffer(buf, dtype=np.float32).reshape(h, w)
-            else:
-                arr = np.zeros((h, w), dtype=np.float32)
-            return arr
-        R = ch('R'); G = ch('G'); B = ch('B'); A = ch('A')
-        rgba = np.stack([R, G, B, A], axis=-1)
-        exr.close()
-        return np.clip(rgba, 0.0, 1.0)
-    except Exception as e:
-        raise RuntimeError(f"Failed to read EXR `{path}`: {e}") from e
-
-
 def load_rgb_image(path):
     ''' Load RGB image (both uint8 and float32) into image in range [0, 1] '''
     ext = os.path.splitext(path)[1]
     if ext == '.exr':
         # NOTE imageio read exr has artifact https://github.com/imageio/imageio/issues/517
-        # image = pyexr.read(path)
-        import OpenEXR
-        image = read_exr_rgba(path)
-        # image = read_exr_all_channels(path)
+        image = pyexr.read(path)
     else:
         image = imageio.imread(path)
     if image.shape[-1] > 3:
