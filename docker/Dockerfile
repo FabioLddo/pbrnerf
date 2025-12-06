@@ -48,7 +48,7 @@ ARG WORKSPACE_DIR=/app/pbrnerf
 # Environment variables synchronized with build args
 ENV DEBIAN_FRONTEND=noninteractive \
     OPENCV_IO_ENABLE_OPENEXR=True \
-    WORKSPACE_DIR=${WORKSPACE_DIR}
+    WORKSPACE_DIR=${WORKSPACE_DIR} \
     PIP_DEFAULT_TIMEOUT=${PIP_TIMEOUT} \
     PIP_RETRIES=${PIP_RETRIES} \
     TORCH_CUDA_ARCH_LIST=${TORCH_CUDA_ARCH_LIST} \
