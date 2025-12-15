@@ -126,11 +126,12 @@ def load_rgb_image_my(path):
         
         # Save comparison images (scaled to [0, 255] for visualization)
         debug_folder = os.path.join('/workspaces/pbrnerf/', 'debug_comparison')
-        os.makedirs(debug_folder, exist_ok=True)
 
         # Include parent folder name to differentiate files with same name
         parent_folder = os.path.basename(os.path.dirname(path))
         filename = os.path.splitext(os.path.basename(path))[0]
+
+        os.makedirs(os.path.join(debug_folder, parent_folder), exist_ok=True)
         
         imageio.imwrite(os.path.join(debug_folder, parent_folder, f'{filename}_original.png'), 
                        (np.clip(image_orig, 0, 1) * 255).astype(np.uint8))
