@@ -175,8 +175,19 @@ RUN cd ./code/pyrt && \
         -Dpybind11_DIR=$pybind11_DIR && \
     make pyrt -j$(nproc)
 
-# Step 8: Link OptiX library
+# Step 9: Backup PyRT build artifacts (for mount protection)
+RUN mkdir -p /opt/pyrt_build_backup && \
+    cp -r ${WORKSPACE_DIR}/code/pyrt/build/* /opt/pyrt_build_backup/
+
+# Step 10: Link OptiX library
 RUN ln -sf /usr/lib/x86_64-linux-gnu/libnvoptix.so.575.57.08 /usr/lib/x86_64-linux-gnu/libnvoptix.so.1
+
+# Step 11: Setup entrypoint to restore build via symlink
+COPY docker/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
 
 # Set working directory to code for training
 WORKDIR ${WORKSPACE_DIR}
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["/bin/bash"]
