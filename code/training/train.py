@@ -4,6 +4,15 @@ import argparse
 import sys
 sys.path.append('../code')
 import numpy as np
+
+from pathlib import Path
+from dotenv import load_dotenv
+
+# Load .env from project root (two levels up from this file)
+project_root = Path(__file__).parent.parent.parent
+dotenv_path = project_root / '.env'
+load_dotenv(dotenv_path=dotenv_path)
+
 import random
 import tqdm
 from importlib import import_module

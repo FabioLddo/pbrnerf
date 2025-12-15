@@ -5,6 +5,13 @@ import pyexr
 import skimage
 import json
 import torch
+import OpenEXR
+import Imath
+import numpy as np
+import os
+import imageio
+from skimage import img_as_float32
+from pathlib import Path
 
 def load_gray_image(path):
     ''' Load gray scale image (both uint8 and float32) into image in range [0, 1] '''
@@ -48,6 +55,98 @@ def load_rgb_image(path):
     image = skimage.img_as_float32(image)
     return image
 
+def read_exr_all_channels(path: Path) -> np.ndarray:
+    """Read all channels from an EXR file using OpenEXR into a float32 HxWxN array."""
+    import OpenEXR, Imath
+    import numpy as np
+
+    exr = OpenEXR.InputFile(str(path))
+    dw = exr.header()['dataWindow']
+    w = dw.max.x - dw.min.x + 1
+    h = dw.max.y - dw.min.y + 1
+    pt = Imath.PixelType(Imath.PixelType.FLOAT)
+
+    channels = list(exr.header()['channels'].keys())
+    channel_arrays = []
+    for c in channels:
+        buf = exr.channel(c, pt)
+        arr = np.frombuffer(buf, dtype=np.float32).reshape(h, w)
+        channel_arrays.append(arr)
+
+    exr.close()
+    # Stack all channel arrays along the last axis
+    all_channels = np.stack(channel_arrays, axis=-1)
+    return np.clip(all_channels, 0.0, 1.0)
+
+def read_exr_rgba(path: Path) -> np.ndarray:
+    """Read RGBA from an EXR file into float32 array HxWx4 clipped to [0,1]."""
+    try:
+        import OpenEXR, Imath  # type: ignore
+        exr = OpenEXR.InputFile(str(path))
+        dw = exr.header()['dataWindow']
+        w = dw.max.x - dw.min.x + 1
+        h = dw.max.y - dw.min.y + 1
+        pt = Imath.PixelType(Imath.PixelType.FLOAT)
+        header_channels = exr.header()['channels'].keys()
+        def ch(name: str) -> np.ndarray:
+            if name in header_channels:
+                buf = exr.channel(name, pt)
+                arr = np.frombuffer(buf, dtype=np.float32).reshape(h, w)
+            else:
+                arr = np.zeros((h, w), dtype=np.float32)
+            return arr
+        R = ch('R'); G = ch('G'); B = ch('B'); A = ch('A')
+        rgba = np.stack([R, G, B, A], axis=-1)
+        exr.close()
+        return np.clip(rgba, 0.0, 1.0)
+    except Exception as e:
+        raise RuntimeError(f"Failed to read EXR `{path}`: {e}") from e
+
+
+def load_rgb_image_my(path):
+    ''' Load RGB image (both uint8 and float32) into image in range [0, 1] '''
+    ext = os.path.splitext(path)[1]
+    if ext == '.exr':
+        exr_file = OpenEXR.InputFile(path)
+        header = exr_file.header()
+        dw = header['dataWindow']
+        size = (dw.max.x - dw.min.x + 1, dw.max.y - dw.min.y + 1)
+        
+        # Read RGB channels (pt = Imath.PixelType(Imath.PixelType.FLOAT))
+        r = np.frombuffer(exr_file.channel('R', Imath.PixelType(Imath.PixelType.FLOAT)), dtype=np.float32)
+        g = np.frombuffer(exr_file.channel('G', Imath.PixelType(Imath.PixelType.FLOAT)), dtype=np.float32)
+        b = np.frombuffer(exr_file.channel('B', Imath.PixelType(Imath.PixelType.FLOAT)), dtype=np.float32)
+        
+        image = np.stack([r, g, b], axis=-1).reshape(size[1], size[0], 3)
+        exr_file.close()
+        
+        # DEBUG: Compare with original load function
+        image_orig = load_rgb_image(path)
+        diff = np.abs(image - image_orig[:,:,:3])
+        
+        # Save comparison images (scaled to [0, 255] for visualization)
+        debug_folder = os.path.join('/workspaces/pbrnerf', 'debug_comparison')
+        os.makedirs(debug_folder, exist_ok=True)
+        filename = os.path.splitext(os.path.basename(path))[0]
+        
+        imageio.imwrite(os.path.join(debug_folder, f'{filename}_original.png'), 
+                       (np.clip(image_orig, 0, 1) * 255).astype(np.uint8))
+        imageio.imwrite(os.path.join(debug_folder, f'{filename}_my.png'), 
+                       (np.clip(image, 0, 1) * 255).astype(np.uint8))
+        imageio.imwrite(os.path.join(debug_folder, f'{filename}_diff.png'), 
+                       (np.clip(diff * 10, 0, 1) * 255).astype(np.uint8))  # 10x amplification for visibility
+        
+        print(f'Saved comparison images to {debug_folder}')
+        print(f'Max difference: {diff.max()}, Mean difference: {diff.mean()}')
+    else:
+        image = imageio.imread(path)
+        if image.shape[-1] > 3:
+            image = image[..., :3]
+        image = img_as_float32(image)
+        return image
+    
+    return image  # Already float32 in [0,1] range for EXR
+
 
 def load_rgb_image_with_prefix(prefix):
     ''' Load image using prefix to support different data type '''
@@ -55,7 +154,7 @@ def load_rgb_image_with_prefix(prefix):
     for ext in exts:
         path = prefix + ext
         if os.path.exists(path):
-            return load_rgb_image(path)
+            return load_rgb_image_my(path)
     print ('Does not exists any image file with prefix: ' + prefix)
     return None
 
