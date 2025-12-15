@@ -122,18 +122,21 @@ def load_rgb_image_my(path):
         
         # DEBUG: Compare with original load function
         image_orig = load_rgb_image(path)
-        diff = np.abs(image - image_orig[:,:,:3])
+        diff = np.abs(image - image_orig)
         
         # Save comparison images (scaled to [0, 255] for visualization)
-        debug_folder = os.path.join('/workspaces/pbrnerf', 'debug_comparison')
+        debug_folder = os.path.join('/workspaces/pbrnerf/', 'debug_comparison')
         os.makedirs(debug_folder, exist_ok=True)
+
+        # Include parent folder name to differentiate files with same name
+        parent_folder = os.path.basename(os.path.dirname(path))
         filename = os.path.splitext(os.path.basename(path))[0]
         
-        imageio.imwrite(os.path.join(debug_folder, f'{filename}_original.png'), 
+        imageio.imwrite(os.path.join(debug_folder, parent_folder, f'{filename}_original.png'), 
                        (np.clip(image_orig, 0, 1) * 255).astype(np.uint8))
-        imageio.imwrite(os.path.join(debug_folder, f'{filename}_my.png'), 
+        imageio.imwrite(os.path.join(debug_folder, parent_folder,  f'{filename}_my.png'), 
                        (np.clip(image, 0, 1) * 255).astype(np.uint8))
-        imageio.imwrite(os.path.join(debug_folder, f'{filename}_diff.png'), 
+        imageio.imwrite(os.path.join(debug_folder, parent_folder,  f'{filename}_diff.png'), 
                        (np.clip(diff * 10, 0, 1) * 255).astype(np.uint8))  # 10x amplification for visibility
         
         print(f'Saved comparison images to {debug_folder}')

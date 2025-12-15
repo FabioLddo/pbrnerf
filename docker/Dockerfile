@@ -65,9 +65,6 @@ ENV PATH=/venv/bin:$OPTIX_ROOT/bin:$PATH
 
 WORKDIR ${WORKSPACE_DIR}
 
-# Copy source code
-COPY . ./
-
 # Step 1: Update system and install dependencies
 RUN apt-get update -qq && \
     apt-get install -y -qq \
@@ -112,6 +109,9 @@ RUN update-alternatives --set python /usr/bin/python$PYVER
 RUN python3 -m venv /venv
 
 RUN python3 -m pip install pip --upgrade
+
+# Copy source code
+COPY . ./
 
 #RUN git clone -b dev https://github.com/FabioLddo/pbrnerf.git ./
 
