@@ -1,10 +1,20 @@
 #!/usr/bin/env bash
 # Set the default scene
-SCENE="data_nike_v3"
+SCENE="data_rand"
 # TAGS="debug"
 TAGS="avg"
 CONS_LOSS=0.0
 SPEC_LOSS=0.0
+
+# Load environment variables from dotenv file
+ENV_FILE="/app/pbrnerf/.env"
+if [ -f $ENV_FILE ]; then
+  set -a
+  source $ENV_FILE
+  set +a
+  echo "WANDB_MODE: WANDB_MODE"  # Add this line
+
+fi
 
 # Override with the first command-line argument, if provided
 if [ -n "$1" ]; then
@@ -27,8 +37,8 @@ echo "Using scene: $SCENE"
 
 cd code
 python training/train.py \
-  /workspace/datasets/$SCENE \
-  /workspace/outputs/$SCENE \
+  $WORKSPACE_DIR/datasets/$SCENE \
+  $WORKSPACE_DIR/outputs/$SCENE \
   --name $SCENE \
   --tags $TAGS \
   --override_cons_weighting $CONS_LOSS \

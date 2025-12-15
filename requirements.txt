@@ -16,3 +16,4 @@ pybind11<2.12
 ninja
 mkl==2023.1.0
 dotenv
+pydevd-pycharm
